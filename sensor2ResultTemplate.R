@@ -49,7 +49,7 @@ ui <- fluidPage(
         HTML(
           "<h5 align='justify'>This interface allows to create XML insertResultTemplate for Sensor Observation Service (SOS) starting from a SensorML. Insert below a resolvable and unique ID of the station/sensor (e.g. <a href=\"http://getit.lteritalia.it/sensors/sensor/ds/?format=text/html&sensor_id=http%3A//www.get-it.it/sensors/getit.lteritalia.it/procedure/CampbellScientificInc/noModelDeclared/noSerialNumberDeclared/20170914050327762_790362\">ENEA Santa Teresa meteorological station</a>).</h5>"
         ),
-      actionButton("help", "Give me an overview", style="color: #fff; background-color: #0069D9; border-color: #0069D9")
+        actionButton("help", "Give me an overview", style = "color: #fff; background-color: #0069D9; border-color: #0069D9")
       ),
       introBox(
         div(HTML("<hr><h4>Service endpoint</h4>")),
@@ -137,7 +137,7 @@ ui <- fluidPage(
           }
           </style>"
         )
-        ),
+      ),
       uiOutput(outputId = "header"),
       introBox(
         uiOutput(outputId = "codeXML"),
@@ -145,18 +145,20 @@ ui <- fluidPage(
         data.intro = "In this box you can see the insertResultTempalte in XML code. You can also use this tool in order to create insertResultTempalte XML request for SOS server not listed into \"Service endpoint\" drop box."
       ),
       verbatimTextOutput("selectParamCSV")
-        ),
-      )
-    )
+    ),
+  )
+)
 
 ###
 # Server
 ###
 server <- function(input, output, session) {
-  
   # initiate hints on startup with custom button and event
-  hintjs(session, options = list("hintButtonLabel"="Hope this hint was helpful"),
-         events = list("onhintclose"=I('alert("Wasn\'t that hint helpful")')))
+  hintjs(
+    session,
+    options = list("hintButtonLabel" = "Hope this hint was helpful"),
+    events = list("onhintclose" = I('alert("Wasn\'t that hint helpful")'))
+  )
   
   # edit module returns mapedit
   # output$edits <- callModule(
@@ -172,7 +174,7 @@ server <- function(input, output, session) {
   #   if(!is.null(input$map_center$lat)) new_lat <- input$map_center$lat
   #   new_lon <- 0
   #   if(!is.null(input$map_center$lng)) new_lon <- input$map_center$lng
-  #   
+  #
   #   leaflet() %>% addTiles() %>%
   #     setView(new_lon, new_lat, zoom = new_zoom) %>%
   #     # setView(lng = 0, lat = 0, zoom = 1) %>%
@@ -190,7 +192,7 @@ server <- function(input, output, session) {
   #         )
   #       )
   # })
-  # 
+  #
   # observeEvent(c(input$mymap_draw_edited_features, input$mymap_draw_new_feature), {
   #   if (!is.null(input$mymap_draw_edited_features)) {
   #     click_lon <- input$mymap_draw_edited_features$features[[1]]$geometry$coordinates[[1]]
@@ -207,7 +209,7 @@ server <- function(input, output, session) {
   #   coordinatesFOI$lon <- c(click_lon)
   #   updateTextInput(session, "lat", value = click_lat)
   #   updateTextInput(session, "long", value = click_lon)
-  #   
+  #
   #   print(input$mymap_draw_edited_features$features[[1]]$geometry$coordinates)
   # })
   
@@ -236,44 +238,41 @@ server <- function(input, output, session) {
   observe({
     req(input$sosHost, input$SensorMLURI)
     
-    rvXML$XML <- xml_xslt((
-      read_xml(
-        paste0(
-          input$sosHost,
-          '/observations/sos/kvp?service=SOS&version=2.0.0&request=DescribeSensor&procedure=', 
-          input$SensorMLURI, 
-          '&procedureDescriptionFormat=http://www.opengis.net/sensorml/2.0'), 
-        package = "xslt"
-      )
-    ), style)
+    rvXML$XML <- xml_xslt((read_xml(
+      paste0(
+        input$sosHost,
+        '/observations/sos/kvp?service=SOS&version=2.0.0&request=DescribeSensor&procedure=',
+        input$SensorMLURI,
+        '&procedureDescriptionFormat=http://www.opengis.net/sensorml/2.0'
+      ),
+      package = "xslt"
+    )), style)
   })
   
   output$codeXML <- renderUI({
     # if (!input$SensorMLURI == "") {
-      
-      # Create a Progress object
-      progress <- shiny::Progress$new()
-      # Make sure it closes when we exit this reactive, even if there's an error
-      on.exit(progress$close())
-      progress$set(message = "Making XML request", value = 0)
-      
-      tags$form(tags$textarea(
-        id = "code",
-        name = "code",
-        as.character(rvXML$XML)
-      ),
-      tags$script(
-        HTML(
-          "var editorXML = CodeMirror.fromTextArea(document.getElementById(\"code\"), {
+    
+    # Create a Progress object
+    progress <- shiny::Progress$new()
+    # Make sure it closes when we exit this reactive, even if there's an error
+    on.exit(progress$close())
+    progress$set(message = "Making XML request", value = 0)
+    
+    tags$form(tags$textarea(id = "code",
+                            name = "code",
+                            as.character(rvXML$XML)),
+              tags$script(
+                HTML(
+                  "var editorXML = CodeMirror.fromTextArea(document.getElementById(\"code\"), {
           mode: \"xml\",
           lineNumbers: true,
           smartindent: true,
           extraKeys: {\"Ctrl-Space\": \"autocomplete\"}
           });
           editorXML.setSize(\"100%\",\"100%\");"
-          )
-        ))
-          # }
+                )
+              ))
+    # }
     # else if (input$SensorMLURI == "Couldn't resolve host name.") {
     #     tags$textarea(
     #       id="code",
@@ -281,11 +280,10 @@ server <- function(input, output, session) {
     #       "Couldn't resolve host name. Please put in the SensorML URI valid URL."
     #     )
     # }
-    })
+  })
   
   # event for upload XML button
   observeEvent(input$sendQ, {
-    
     # Create a Progress object
     progress <- shiny::Progress$new()
     # Make sure it closes when we exit this reactive, even if there's an error
@@ -297,10 +295,13 @@ server <- function(input, output, session) {
     b <- gsub("\n", "§", gsub("\"", "'", xmlRequest))
     a <- strsplit(b, "<sos:InsertResultTemplate ")[[1]]
     e <- a[2:length(a)]
-    c <- paste("<?xml version='1.0' encoding='UTF-8'?>§<sos:InsertResultTemplate ", e, sep = "")
-    d <- gsub("§","\n", gsub("'", "\"", c))
+    c <-
+      paste("<?xml version='1.0' encoding='UTF-8'?>§<sos:InsertResultTemplate ",
+            e,
+            sep = "")
+    d <- gsub("§", "\n", gsub("'", "\"", c))
     
-    for(f in 1:length(d)){
+    for (f in 1:length(d)) {
       xmlFilePath <- paste("request", f, ".xml", sep = "")
       xmlFile <- file(xmlFilePath, "wt")
       xml2::write_xml(xml2::read_xml(d[f]), xmlFilePath)
@@ -309,16 +310,32 @@ server <- function(input, output, session) {
       if (input$sosHost == 'http://193.204.242.151') {
         # provide the token of GET-IT LTER-Italy
         tokenSOS <- paste0('Token ', 'xxxxxxxxxxxx')
-        response <- httr::POST(url = paste0(input$sosHost, '/observations/service'),
-                               body = upload_file(xmlFilePath),
-                               config = add_headers(c('Content-Type' = 'application/xml', 'Authorization' = tokenSOS)))
+        response <-
+          httr::POST(
+            url = paste0(input$sosHost, '/observations/service'),
+            body = upload_file(xmlFilePath),
+            config = add_headers(
+              c(
+                'Content-Type' = 'application/xml',
+                'Authorization' = tokenSOS
+              )
+            )
+          )
         cat(paste0(response, collapse = ''))
       } else {
         # provide the token of CDN
         tokenSOS <- paste0('Token ', 'xxxxxxxxxxxx')
-        response <- httr::POST(url = paste0(input$sosHost, '/observations/service'),
-                               body = upload_file(xmlFilePath),
-                               config = add_headers(c('Content-Type' = 'application/xml', 'Authorization' = tokenSOS)))
+        response <-
+          httr::POST(
+            url = paste0(input$sosHost, '/observations/service'),
+            body = upload_file(xmlFilePath),
+            config = add_headers(
+              c(
+                'Content-Type' = 'application/xml',
+                'Authorization' = tokenSOS
+              )
+            )
+          )
         paste0(response, collapse = '')
       }
     }
@@ -326,13 +343,17 @@ server <- function(input, output, session) {
   
   # start introjs when button is pressed with custom options and events
   observeEvent(input$help,
-               introjs(session, options = list("nextLabel" = "Next →",
-                                               "prevLabel" = "← Back",
-                                               "skipLabel" = "Skip"),
-                       events = list("oncomplete" = I('alert("Overview completed.")')))
-  )
+               introjs(
+                 session,
+                 options = list(
+                   "nextLabel" = "Next →",
+                   "prevLabel" = "← Back",
+                   "skipLabel" = "Skip"
+                 ),
+                 events = list("oncomplete" = I('alert("Overview completed.")'))
+               ))
   
-  }
+}
 
 # Run the application
 shinyApp(ui, server)
