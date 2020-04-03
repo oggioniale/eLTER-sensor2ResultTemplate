@@ -58,28 +58,33 @@ ui <- fluidPage(
           label = "Select SOS endpoint",
           multiple = F,
           choices = list(
-            # change when GET-IT LTER-Italy will be installed
-            # "LTER-Italy SOS (default)" = "http://getit.lteritalia.it",
-            "LTER-Italy SOS (default)" = "http://193.204.242.151",
-            "LTER-Eu CDN SOS" = "http://cdn.lter-europe.net"
+            "LTER-Italy SOS (default)" = "http://getit.lteritalia.it"#,
+            # "LTER-Eu CDN SOS" = "http://cdn.lter-europe.net"
           ),
           selected = "http://getit.lteritalia.it"
         ),
         data.step = 2,
-        data.intro = "This is the dropdown menu for select the SOS where you can send the insertResulTempelate request and, moreover, where is stored the station/sensor to which you want to associate a template."
+        data.intro = "In this dropdown menu you can select the SOS where you want to upload the observations and where is stored the station/sensor information."
       ),
       introBox(
         div(HTML("<hr><h4>Station</h4>")),
-        textInput('SensorMLURI', 'Enter unique ID of station'),
+        selectInput(inputId = "SensorMLURI",
+                    label = HTML("Select name of the station/sensor (e.g. <a href=\"http://getit.lteritalia.it/sensors/sensor/ds/?format=text/html&sensor_id=http%3A//www.get-it.it/sensors/getit.lteritalia.it/procedure/CampbellScientificInc/noModelDeclared/noSerialNumberDeclared/20170914050327762_790362\">ENEA Santa Teresa meteorological station</a>)"), 
+                    multiple = FALSE,
+                    ""
+        ),
         data.step = 3,
-        data.intro = "This is the text box where you must insert the ID of the station/sensor."
+        data.intro = "This is the dopdown menu where you must select the name of the station/sensor.",
+        div(HTML("<p>In the map the position of the station selected above.</p>")),
+        leafletOutput("mymap"),
+        div(HTML("<br/>"))
       ),
       # div(HTML(
       #   "<hr><h4>Feature Of Interest (FOI)</h4>"
       # )),
       # textInput('FOI_Name', 'Enter the name of feature of interest'),
       # textInput('FOI_EPSG', 'Enter URL of sample feature'),
-      
+
       # Input: FOI POPUP
       # actionButton('foi', 'Click for provide station\'s position'),
       # shinyBS::bsModal(
@@ -150,6 +155,11 @@ ui <- fluidPage(
 )
 
 ###
+# Sources
+###
+source("functions.R", local = TRUE)$value
+
+###
 # Server
 ###
 server <- function(input, output, session) {
@@ -165,34 +175,6 @@ server <- function(input, output, session) {
   #   editMod,
   #   "editor",
   
-  # coordinatesFOI <- reactiveValues(lat = NULL, lon = NULL)
-  # output$mymap <- renderLeaflet({
-  #   #Get setView parameters
-  #   new_zoom <- 2
-  #   if(!is.null(input$map_zoom)) new_zoom <- input$map_zoom
-  #   new_lat <- 0
-  #   if(!is.null(input$map_center$lat)) new_lat <- input$map_center$lat
-  #   new_lon <- 0
-  #   if(!is.null(input$map_center$lng)) new_lon <- input$map_center$lng
-  #
-  #   leaflet() %>% addTiles() %>%
-  #     setView(new_lon, new_lat, zoom = new_zoom) %>%
-  #     # setView(lng = 0, lat = 0, zoom = 1) %>%
-  #     addSearchOSM() %>%
-  #     addDrawToolbar(
-  #       #targetGroup = "new_points",
-  #       polylineOptions = FALSE,
-  #       polygonOptions = FALSE,
-  #       rectangleOptions = FALSE,
-  #       circleOptions = FALSE,
-  #       circleMarkerOptions = FALSE,
-  #       #markerOptions = TRUE,
-  #       editOptions = editToolbarOptions(
-  #         selectedPathOptions = selectedPathOptions()
-  #         )
-  #       )
-  # })
-  #
   # observeEvent(c(input$mymap_draw_edited_features, input$mymap_draw_new_feature), {
   #   if (!is.null(input$mymap_draw_edited_features)) {
   #     click_lon <- input$mymap_draw_edited_features$features[[1]]$geometry$coordinates[[1]]
@@ -209,7 +191,7 @@ server <- function(input, output, session) {
   #   coordinatesFOI$lon <- c(click_lon)
   #   updateTextInput(session, "lat", value = click_lat)
   #   updateTextInput(session, "long", value = click_lon)
-  #
+  # 
   #   print(input$mymap_draw_edited_features$features[[1]]$geometry$coordinates)
   # })
   
@@ -223,6 +205,47 @@ server <- function(input, output, session) {
                                is.null(input$SensorMLURI)))
   })
   
+  ### Codelist for dropdown menu of stations from procedure elements within capabilities XML
+  outputsProcedures <- reactive({
+    listProcedure <- getProcedureList(input$sosHost)
+  })
+  
+  # coordinatesFOI <- reactiveValues(lat = NULL, lon = NULL)
+  output$mymap <- renderLeaflet({
+      lat <- outputsProcedures()[input$SensorMLURI][[1]][3][[1]]
+      lon <- outputsProcedures()[input$SensorMLURI][[1]][2][[1]]
+    
+      #Get setView parameters
+      new_zoom <- 2
+      new_lat <- 0
+      # if(!is.null(lat)) new_lat <- lat
+      new_lon <- 0
+      # if(!is.null(lon)) new_lon <- lon
+      
+      leaflet() %>% addTiles() %>%
+        setView(new_lon, new_lat, zoom = new_zoom) #%>%
+        addMarkers(lng = lon, lat = lat)
+      # setView(lng = 0, lat = 0, zoom = 1) %>%
+      # addSearchOSM() %>%
+      # addDrawToolbar(
+      #   #targetGroup = "new_points",
+      #   polylineOptions = FALSE,
+      #   polygonOptions = FALSE,
+      #   rectangleOptions = FALSE,
+      #   circleOptions = FALSE,
+      #   circleMarkerOptions = FALSE,
+      #   #markerOptions = TRUE,
+      #   editOptions = editToolbarOptions(
+      #     selectedPathOptions = selectedPathOptions()
+      #     )
+      # )
+  })
+  
+  observe({
+    updateSelectInput(session, "SensorMLURI", choices = outputsProcedures())
+  })
+  ### End codelist
+  
   output$header <- renderUI({
     if (!input$SensorMLURI == "") {
       tags$div(
@@ -234,7 +257,7 @@ server <- function(input, output, session) {
   })
   
   rvXML <- reactiveValues(XML = '')
-  
+
   observe({
     req(input$sosHost, input$SensorMLURI)
     
@@ -306,38 +329,45 @@ server <- function(input, output, session) {
       xmlFile <- file(xmlFilePath, "wt")
       xml2::write_xml(xml2::read_xml(d[f]), xmlFilePath)
       # change when GET-IT LTER-Italy will be installed
-      # if (input$sosHost == 'http://getit.lteritalia.it') {
-      if (input$sosHost == 'http://193.204.242.151') {
-        # provide the token of GET-IT LTER-Italy
-        tokenSOS <- paste0('Token ', 'xxxxxxxxxxxx')
-        response <-
-          httr::POST(
-            url = paste0(input$sosHost, '/observations/service'),
-            body = upload_file(xmlFilePath),
-            config = add_headers(
-              c(
-                'Content-Type' = 'application/xml',
-                'Authorization' = tokenSOS
-              )
-            )
-          )
-        cat(paste0(response, collapse = ''))
-      } else {
-        # provide the token of CDN
-        tokenSOS <- paste0('Token ', 'xxxxxxxxxxxx')
-        response <-
-          httr::POST(
-            url = paste0(input$sosHost, '/observations/service'),
-            body = upload_file(xmlFilePath),
-            config = add_headers(
-              c(
-                'Content-Type' = 'application/xml',
-                'Authorization' = tokenSOS
-              )
-            )
-          )
+      if (input$sosHost == 'http://getit.lteritalia.it') {
+        # provide the token of GET-IT LTER-italy
+        tokenSOS <- paste0('Authorization = Token ', 'aayhb2087npouKKKaiu')
+        response <- httr::POST(url = paste0(input$sosHost, '/observations/service'),
+                               body = upload_file(xmlFilePath),
+                               config = add_headers(c('Content-Type' = 'application/xml', tokenSOS)))
         paste0(response, collapse = '')
       }
+      # 
+      # if (input$sosHost == 'http://getit.lteritalia.it') {
+      #   tokenSOS <- paste0('Token ', 'aayhb2087npouKKKaiu')
+      #   response <-
+      #     httr::POST(
+      #       url = paste0(input$sosHost, '/observations/service'),
+      #       body = upload_file(xmlFilePath),
+      #       config = add_headers(
+      #         c(
+      #           'Content-Type' = 'application/xml',
+      #           'Authorization' = tokenSOS
+      #         )
+      #       )
+      #     )
+      #   cat(paste0(response, collapse = ''))
+      # } else {
+      # provide the token of CDN
+      #   tokenSOS <- paste0('Token ', 'xxxxxxxxxxxx')
+      #   response <-
+      #     httr::POST(
+      #       url = paste0(input$sosHost, '/observations/service'),
+      #       body = upload_file(xmlFilePath),
+      #       config = add_headers(
+      #         c(
+      #           'Content-Type' = 'application/xml',
+      #           'Authorization' = tokenSOS
+      #         )
+      #       )
+      #     )
+      #   paste0(response, collapse = '')
+      # }
     }
   })
   
