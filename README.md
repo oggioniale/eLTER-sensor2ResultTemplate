@@ -2,9 +2,9 @@ eLTER-sensor2ResultTemplate
 ======================
 
 ## Description
-InsertResultTemplate is a Sensor Observation Service (SOS) request for inserting a result template into a SOS server that describes the structure of the values of a InsertResult. The insertResulTempalte must be associate to a station/sensor. Creating a result template in the SOS server for a station/sensor, a template is created for the observations, and the observations themselves can be entered more easily.
+InsertResultTemplate is a Sensor Observation Service (SOS) request for inserting a result template into a SOS server that describes the structure of the values of a InsertResult. The insertResulTemplate must be associated to a station/sensor. Once a result template is created in the SOS server for a station/sensor, the template can be used for uploading observations easily.
 
-This application allows to create, based on the Sensor Model Language (SensorML), some insertResultTempalte XML requests for each of the parameters measured by the indicated sensor. This application, moreover, allows to send this request to specific SOS server by translactional request.
+This application allows to create, based on the Sensor Model Language (SensorML), insertResultTemplate XML requests for each of the parameters measured by the indicated sensor. This application, moreover, allows to send this request to specific SOS server by translactional request.
 
 ## Usage
 This application can be used following this steps:
