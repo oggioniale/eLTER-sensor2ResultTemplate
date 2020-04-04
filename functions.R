@@ -1,7 +1,7 @@
 ###
 # Functions
 ###
-sosHost <- 'http://getit.lteritalia.it'
+# sosHost <- 'http://getit.lteritalia.it'
 # List of procedure URI and name by SOS endpoint
 getProcedureList <- function(sosHost) {
   # xslProcUrl.url <- "https://www.get-it.it/objects/sensors/xslt/Capabilities_proceduresUrlList.xsl"
@@ -48,6 +48,7 @@ getProcedureList <- function(sosHost) {
     ))
   }
   listProcedure <- split(c(as.list(listProcedure$uri), sensorLon, sensorLat), seq(length(sensorName))) 
+  # as.list(cbind(data.frame(listProcedure$uri), sensorLon, sensorLat))
   names(listProcedure) <- sensorName
   return(listProcedure)
 }

@@ -210,39 +210,49 @@ server <- function(input, output, session) {
     listProcedure <- getProcedureList(input$sosHost)
   })
   
+  # lat <- reactive(outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[2]])
+  # lon <- reactive(outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[3]])
+  # observe({
+  #   req(input$SensorMLURI)
+  #   print(
+  #     c(
+  #     outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[2]],
+  #     outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[3]]
+  #   )
+  #   )
+  #   })
   # coordinatesFOI <- reactiveValues(lat = NULL, lon = NULL)
   output$mymap <- renderLeaflet({
-      lat <- outputsProcedures()[input$SensorMLURI][[1]][3][[1]]
-      lon <- outputsProcedures()[input$SensorMLURI][[1]][2][[1]]
-    
       #Get setView parameters
       new_zoom <- 2
       new_lat <- 0
       # if(!is.null(lat)) new_lat <- lat
       new_lon <- 0
       # if(!is.null(lon)) new_lon <- lon
-      
-      leaflet() %>% addTiles() %>%
-        setView(new_lon, new_lat, zoom = new_zoom) #%>%
-        addMarkers(lng = lon, lat = lat)
-      # setView(lng = 0, lat = 0, zoom = 1) %>%
-      # addSearchOSM() %>%
-      # addDrawToolbar(
-      #   #targetGroup = "new_points",
-      #   polylineOptions = FALSE,
-      #   polygonOptions = FALSE,
-      #   rectangleOptions = FALSE,
-      #   circleOptions = FALSE,
-      #   circleMarkerOptions = FALSE,
-      #   #markerOptions = TRUE,
-      #   editOptions = editToolbarOptions(
-      #     selectedPathOptions = selectedPathOptions()
-      #     )
-      # )
+        
+        leaflet() %>% addTiles() %>%
+          setView(new_lon, new_lat, zoom = new_zoom) %>%
+          addMarkers(lng = lon(),
+                     lat = lat()
+                     )
+        # setView(lng = 0, lat = 0, zoom = 1) %>%
+        # addSearchOSM() %>%
+        # addDrawToolbar(
+        #   #targetGroup = "new_points",
+        #   polylineOptions = FALSE,
+        #   polygonOptions = FALSE,
+        #   rectangleOptions = FALSE,
+        #   circleOptions = FALSE,
+        #   circleMarkerOptions = FALSE,
+        #   #markerOptions = TRUE,
+        #   editOptions = editToolbarOptions(
+        #     selectedPathOptions = selectedPathOptions()
+        #     )
+        # )
   })
   
   observe({
-    updateSelectInput(session, "SensorMLURI", choices = outputsProcedures())
+    updateSelectInput(session, "SensorMLURI", choices = lapply(outputsProcedures(), `[[`, 1))
   })
   ### End codelist
   
