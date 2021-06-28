@@ -59,6 +59,8 @@ ui <- fluidPage(
           multiple = F,
           choices = list(
             "LTER-Italy SOS (default)" = "http://getit.lteritalia.it"#,
+            # "Demo GET-IT (SOS v.2.0.0)" = "http://demo0.get-it.it"#,
+            # "LTER-Italy CNR ISMAR - Venezia (SOS v1.0.0)" = "http://vesk.ve.ismar.cnr.it"#, # http://vesk.ve.ismar.cnr.it/observations/sos/pox
             # "LTER-Eu CDN SOS" = "http://cdn.lter-europe.net"
           ),
           selected = "http://getit.lteritalia.it"
@@ -200,28 +202,20 @@ server <- function(input, output, session) {
   style <- read_xml(xslObs.url, package = "xslt")
   
   observe({
-    toggleState("sendQ",
-                condition = (input$SensorMLURI != "" |
-                               is.null(input$SensorMLURI)))
+    toggleState(
+      "sendQ",
+      condition = (
+        input$SensorMLURI != "" | is.null(input$SensorMLURI)
+      )
+    )
   })
   
   ### Codelist for dropdown menu of stations from procedure elements within capabilities XML
   outputsProcedures <- reactive({
     listProcedure <- getProcedureList(input$sosHost)
   })
-  
-  # lat <- reactive(outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[2]])
-  # lon <- reactive(outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[3]])
-  # observe({
-  #   req(input$SensorMLURI)
-  #   print(
-  #     c(
-  #     outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[2]],
-  #     outputsProcedures()[grep(input$SensorMLURI, sapply(listProcedure, `[[`, 1))][[1]][[3]]
-  #   )
-  #   )
-  #   })
-  # coordinatesFOI <- reactiveValues(lat = NULL, lon = NULL)
+
+  coordinatesFOI <- reactiveValues(lat = NULL, lon = NULL)
   output$mymap <- renderLeaflet({
       #Get setView parameters
       new_zoom <- 2
@@ -231,11 +225,7 @@ server <- function(input, output, session) {
       # if(!is.null(lon)) new_lon <- lon
         
         leaflet() %>% addTiles() %>%
-          setView(new_lon, new_lat, zoom = new_zoom) %>%
-          addMarkers(lng = lon(),
-                     lat = lat()
-                     )
-        # setView(lng = 0, lat = 0, zoom = 1) %>%
+          setView(new_lon, new_lat, zoom = new_zoom)
         # addSearchOSM() %>%
         # addDrawToolbar(
         #   #targetGroup = "new_points",
@@ -249,6 +239,26 @@ server <- function(input, output, session) {
         #     selectedPathOptions = selectedPathOptions()
         #     )
         # )
+  })
+
+  observe({
+    print(outputsProcedures()[grep(input$SensorMLURI, sapply(outputsProcedures(), `[[`, 1))][[1]])
+    print(names(outputsProcedures()))
+  })
+  
+  observeEvent(input$SensorMLURI, { # update the map markers and view on location selectInput changes
+    leafletProxy("mymap") %>% 
+      setView(
+        lng = outputsProcedures()[grep(input$SensorMLURI, sapply(outputsProcedures(), `[[`, 1))][[1]][[3]],
+        lat = outputsProcedures()[grep(input$SensorMLURI, sapply(outputsProcedures(), `[[`, 1))][[1]][[2]],
+        zoom = 10
+      ) %>% 
+      clearMarkers() %>% 
+      addMarkers(
+        lng = as.numeric(outputsProcedures()[grep(input$SensorMLURI, sapply(outputsProcedures(), `[[`, 1))][[1]][[3]]),
+        lat = as.numeric(outputsProcedures()[grep(input$SensorMLURI, sapply(outputsProcedures(), `[[`, 1))][[1]][[2]]),
+        popup = paste0('Visit the <a href="http://getit.lteritalia.it/sensors/sensor/ds/?format=text/html&sensor_id=', input$SensorMLURI, '" target="_blank">sensor landing page</a>')
+      )
   })
   
   observe({
@@ -380,6 +390,7 @@ server <- function(input, output, session) {
       # }
     }
   })
+  
   
   # start introjs when button is pressed with custom options and events
   observeEvent(input$help,
